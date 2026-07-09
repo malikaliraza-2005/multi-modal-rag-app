@@ -28,5 +28,6 @@ unstructured-inference
 unstructured-pytesseract
 python-magic
 groq
+pi-heif
 pandas
 numpy
