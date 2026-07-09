@@ -1,0 +1,10 @@
+streamlit
+python-dotenv
+langchain-google-genai
+langchain-groq
+unstructured
+chromadb
+langchain-core
+langchain-huggingface
+langchain-chroma
+langchain-community
