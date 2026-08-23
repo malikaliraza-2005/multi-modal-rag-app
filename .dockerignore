@@ -1,0 +1,34 @@
+# The build context is uploaded before the first instruction runs, so keeping
+# it small is the difference between a fast deploy and a several-gigabyte one.
+
+# The web app deploys separately; nothing in it belongs in the API image.
+web/
+
+# Local environments, rebuilt inside the image from api/requirements.txt.
+venv/
+.venv/
+env/
+node_modules/
+
+# Runtime data. The container's copy lives on its own volume.
+storage/
+db/
+
+.git/
+.github/
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

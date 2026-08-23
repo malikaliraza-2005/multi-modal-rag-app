@@ -142,6 +142,10 @@ Interactive docs at http://localhost:8000/docs.
 
 ## Deploying it publicly
 
+Step-by-step instructions are in **[DEPLOY.md](DEPLOY.md)** — the web app goes
+to Vercel, the API to a Hugging Face Space, because 2.3 GB of dependencies and a
+writable disk rule out anything serverless.
+
 There is no sign-in, and on a deployed instance every vision call is billed to
 **your** keys, not the visitor's. Two things follow.
 

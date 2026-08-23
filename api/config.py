@@ -8,11 +8,16 @@ from langchain_groq import ChatGroq
 # Anchor every path to the repo root so behaviour does not depend on the
 # working directory uvicorn happens to be launched from.
 ROOT_DIR = Path(__file__).resolve().parent.parent
-STORAGE_DIR = ROOT_DIR / "storage" / "documents"
-PREVIEW_DIR = ROOT_DIR / "storage" / "previews"
-PERSIST_DIRECTORY = str(ROOT_DIR / "db" / "chroma_db")
 
 load_dotenv(ROOT_DIR / ".env")
+
+# Where uploads and the vector index live. Overridable because a container's
+# only durable directory is wherever its volume is mounted — /data on Hugging
+# Face Spaces — which is never inside the source tree.
+STORAGE_ROOT = Path(os.getenv("STORAGE_ROOT", ROOT_DIR / "storage"))
+STORAGE_DIR = STORAGE_ROOT / "documents"
+PREVIEW_DIR = STORAGE_ROOT / "previews"
+PERSIST_DIRECTORY = os.getenv("CHROMA_DIR", str(ROOT_DIR / "db" / "chroma_db"))
 
 # Groq retires models fairly aggressively — llama-3.3-70b-versatile, which this
 # project previously used, now 404s. Keep the id overridable so a future
