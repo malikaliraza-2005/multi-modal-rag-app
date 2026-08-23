@@ -1,0 +1,27 @@
+# API
+fastapi==0.121.2
+uvicorn[standard]==0.41.0
+python-multipart==0.0.20
+pydantic==2.12.4
+
+# RAG pipeline
+langchain-core==1.4.8
+langchain-community==0.4.2
+langchain-chroma==1.1.0
+langchain-groq==1.1.3
+langchain-google-genai==4.2.6
+langchain-huggingface==1.2.2
+chromadb==1.5.9
+sentence-transformers==5.6.0
+python-dotenv==1.2.2
+
+# Document parsing.
+# [pdf] and [image] pull pdf2image / pdfminer.six / onnxruntime / pillow-heif,
+# which the hi_res strategy needs; [pdf] also requires poppler on PATH. The
+# Office extras are pure-Python readers, except [doc] and [ppt] — the legacy
+# binary formats, which shell out to LibreOffice.
+unstructured[pdf,image,docx,doc,odt,rtf,pptx,ppt,xlsx,csv,tsv,md,rst,epub,msg]==0.18.32
+
+# Normalising every figure to a bounded JPEG before the vision call — Pillow
+# arrives with unstructured, but this pipeline depends on it directly.
+pillow==12.3.0

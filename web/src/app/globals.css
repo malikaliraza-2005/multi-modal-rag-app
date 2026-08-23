@@ -1,0 +1,334 @@
+@import "tailwindcss";
+
+/* next-themes writes data-theme on <html>. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ============================================================
+   TOKENS
+   Every colour, radius, and type step in the app resolves here.
+   Components must not introduce raw hex values or ad-hoc sizes.
+   ============================================================ */
+
+:root {
+  /* Cool-neutral ramp: n-0 is the page floor, n-12 is the strongest ink. */
+  --n-0: #ffffff;
+  --n-1: #fafafb;
+  --n-2: #f3f3f6;
+  --n-3: #e7e7ec;
+  --n-4: #dadae1;
+  --n-5: #c3c3cd;
+  --n-6: #a2a2af;
+  --n-7: #86868f;
+  --n-8: #6a6a75;
+  --n-9: #53535d;
+  --n-10: #3e3e47;
+  --n-11: #26262d;
+  --n-12: #131317;
+
+  /* One accent hue, rationed: focus, active citation, selected row.
+     Primary actions use neutral ink, not colour. */
+  --accent: #15607e;
+  --accent-hover: #114f68;
+  --accent-fg: #ffffff;
+  --accent-soft: #e4f1f7;
+  --accent-line: #a9cfe0;
+
+  --danger: #b4231f;
+  --danger-soft: #fdeceb;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --n-0: #0c0c0f;
+  --n-1: #111114;
+  --n-2: #17171c;
+  --n-3: #232329;
+  --n-4: #2d2d34;
+  --n-5: #3b3b44;
+  --n-6: #4e4e59;
+  --n-7: #6d6d78;
+  --n-8: #888893;
+  --n-9: #9f9faa;
+  --n-10: #b7b7c1;
+  --n-11: #d6d6dd;
+  --n-12: #f1f1f4;
+
+  --accent: #4fa3c7;
+  --accent-hover: #6bb5d5;
+  --accent-fg: #06222e;
+  --accent-soft: #12303c;
+  --accent-line: #235a71;
+
+  --danger: #f0736c;
+  --danger-soft: #35191a;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-n-0: var(--n-0);
+  --color-n-1: var(--n-1);
+  --color-n-2: var(--n-2);
+  --color-n-3: var(--n-3);
+  --color-n-4: var(--n-4);
+  --color-n-5: var(--n-5);
+  --color-n-6: var(--n-6);
+  --color-n-7: var(--n-7);
+  --color-n-8: var(--n-8);
+  --color-n-9: var(--n-9);
+  --color-n-10: var(--n-10);
+  --color-n-11: var(--n-11);
+  --color-n-12: var(--n-12);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  /* Two radii. Controls and panels. Nothing is a pill. */
+  --radius-DEFAULT: 6px;
+  --radius-lg: 10px;
+
+  /* Six type steps. Chrome sits at sm; prose sits at base. */
+  --text-2xs: 0.6875rem; /* 11 */
+  --text-xs: 0.75rem; /* 12 */
+  --text-sm: 0.8125rem; /* 13 */
+  --text-base: 0.9375rem; /* 15 */
+  --text-lg: 1.125rem; /* 18 */
+  --text-xl: 1.5rem; /* 24 */
+
+  /* Two display steps above the scale, for the landing page alone. The app
+     itself never needs them — chrome that shouts is chrome in the way. */
+  --text-2xl: 2rem; /* 32 */
+  --text-3xl: 2.75rem; /* 44 */
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Fixed chrome dimensions, so density stays consistent. */
+  --spacing-header: 44px;
+  --spacing-control: 32px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   BASE
+   Must live in @layer base: unlayered CSS outranks Tailwind's
+   layered utilities regardless of specificity, which would make
+   rules like the focus ring below impossible to override locally.
+   ============================================================ */
+
+@layer base {
+  * {
+    border-color: var(--n-3);
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--n-0);
+    color: var(--n-11);
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--text-sm);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* One focus treatment, everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--n-12);
+  }
+}
+
+/* Restrained scrollbars — the default Windows bar is visually loud. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--n-4);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--n-5);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+/* ============================================================
+   PROSE — the assistant answer column.
+   Answers are typeset as prose, not chat bubbles.
+   ============================================================ */
+
+@layer components {
+  .prose-answer {
+  font-size: var(--text-base);
+  line-height: 1.65;
+  color: var(--n-11);
+}
+.prose-answer > * + * {
+  margin-top: 12px;
+}
+.prose-answer strong {
+  font-weight: 600;
+  color: var(--n-12);
+}
+.prose-answer ul,
+.prose-answer ol {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prose-answer ul {
+  list-style: disc;
+}
+.prose-answer ol {
+  list-style: decimal;
+}
+.prose-answer li::marker {
+  color: var(--n-7);
+}
+.prose-answer code {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--n-2);
+  border: 1px solid var(--n-3);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.prose-answer pre {
+  background: var(--n-1);
+  border: 1px solid var(--n-3);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  overflow-x: auto;
+}
+.prose-answer pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: var(--text-xs);
+}
+.prose-answer h1,
+.prose-answer h2,
+.prose-answer h3 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--n-12);
+  margin-top: 20px;
+}
+.prose-answer a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-answer table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.prose-answer th,
+.prose-answer td {
+  border: 1px solid var(--n-3);
+  padding: 6px 8px;
+  text-align: left;
+}
+.prose-answer th {
+  background: var(--n-1);
+  font-weight: 600;
+}
+}
+
+/* ============================================================
+   MOTION — interactive affordances only.
+   ============================================================ */
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@layer components {
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--n-2);
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--n-3), transparent);
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.indeterminate {
+  animation: indeterminate 1.6s ease-in-out infinite;
+}
+
+@keyframes cite-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  15%,
+  70% {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
+
+.cite-flash {
+  animation: cite-flash 900ms var(--ease-out);
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* react-pdf ships its own stylesheet expectations; we render text-free
+   canvases and supply our own chrome. */
+.react-pdf__Page__canvas {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+}

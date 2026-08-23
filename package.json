@@ -1,0 +1,14 @@
+{
+  "name": "atlas",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node scripts/dev-api.mjs",
+    "dev:web": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "lint": "npm --prefix web run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
