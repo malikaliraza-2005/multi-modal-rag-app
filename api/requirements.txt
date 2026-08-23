@@ -16,12 +16,17 @@ sentence-transformers==5.6.0
 python-dotenv==1.2.2
 
 # Document parsing.
-# [pdf] and [image] pull pdf2image / pdfminer.six / onnxruntime / pillow-heif,
-# which the hi_res strategy needs; [pdf] also requires poppler on PATH. The
-# Office extras are pure-Python readers, except [doc] and [ppt] — the legacy
-# binary formats, which shell out to LibreOffice.
+# [pdf] and [image] pull pdf2image / pdfminer.six / onnxruntime, which the
+# hi_res strategy needs; [pdf] also requires poppler on PATH. The Office extras
+# are pure-Python readers, except [doc] and [ppt] — the legacy binary formats,
+# which shell out to LibreOffice.
 unstructured[pdf,image,docx,doc,odt,rtf,pptx,ppt,xlsx,csv,tsv,md,rst,epub,msg]==0.18.32
 
 # Normalising every figure to a bounded JPEG before the vision call — Pillow
 # arrives with unstructured, but this pipeline depends on it directly.
 pillow==12.3.0
+
+# HEIC/HEIF, which Pillow has no codec for. It arrives as a transitive
+# dependency today, but `api/media.py` registers its opener by name — so it is
+# pinned here rather than left to an extra that could stop pulling it.
+pi-heif==1.4.0
