@@ -1,0 +1,67 @@
+# A free Hugging Face Space sleeps after roughly 48 hours without traffic, and
+# the next visitor pays for the cold start. Any request resets that timer, so a
+# scheduled one is enough to keep the API up.
+#
+# Every six hours rather than every five minutes: the margin against a 48-hour
+# timeout is already enormous, and there is no reason to spend Actions minutes
+# proving it. The job doubles as an uptime check — if the API is genuinely
+# down, this fails and GitHub emails you.
+
+name: Keep the API awake
+
+on:
+  schedule:
+    # Offset from the hour. GitHub's scheduler is most congested at :00, and
+    # scheduled runs are delayed — sometimes by a lot — when it is.
+    - cron: "17 1,7,13,19 * * *"
+  workflow_dispatch:
+
+# Nothing here touches the repository.
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Ping the API
+        env:
+          # Repository variable, not a secret — a Space URL is public anyway.
+          # Settings → Secrets and variables → Actions → Variables.
+          API_BASE: ${{ vars.API_BASE }}
+        run: |
+          set -u
+
+          if [ -z "${API_BASE}" ]; then
+            echo "::error::Set the API_BASE repository variable to your Space URL, e.g. https://you-asterism-api.hf.space"
+            exit 1
+          fi
+
+          url="${API_BASE%/}/health"
+          echo "Pinging $url"
+
+          # A Space that has already fallen asleep takes a while to come back,
+          # and returns 503 while it does. Retry rather than reporting an
+          # outage for what is only a cold start.
+          attempt=1
+          max=5
+          while [ "$attempt" -le "$max" ]; do
+            # curl's own %{http_code} is already 000 when it never connected;
+            # the fallback replaces that value rather than appending to it.
+            code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 90 "$url") || code="000"
+
+            if [ "$code" = "200" ]; then
+              echo "awake (attempt $attempt): $(cat /tmp/body)"
+              exit 0
+            fi
+
+            echo "attempt $attempt/$max returned $code"
+            [ -s /tmp/body ] && head -c 400 /tmp/body && echo
+
+            attempt=$((attempt + 1))
+            [ "$attempt" -le "$max" ] && sleep 30
+          done
+
+          echo "::error::$url did not return 200 after $max attempts over ~10 minutes"
+          exit 1

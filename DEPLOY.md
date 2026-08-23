@@ -14,7 +14,7 @@ writable disk that uploads and the Chroma index need.
 
 **Deploy the API first.** The web app needs its URL, and the API needs the web
 app's origin — so the order is: API → web → back to the API to fill in
-`ALLOWED_ORIGINS`.
+`ALLOWED_ORIGINS` → turn on the keep-alive so the Space never sleeps.
 
 ---
 
@@ -106,10 +106,38 @@ while `curl` keeps working — which reads like a frontend bug and is not one.
 
 ---
 
-## What free costs you
+## 4. Stop it sleeping
 
-**The Space sleeps after ~48 hours idle.** The next visitor waits through a
-cold start. Unavoidable on the free tier.
+A free Space sleeps after roughly 48 hours without traffic, and the next
+visitor pays for the cold start. Any request resets that timer, so
+[`.github/workflows/keep-awake.yml`](.github/workflows/keep-awake.yml) hits
+`/health` four times a day and keeps it up.
+
+One thing to set — **Settings → Secrets and variables → Actions → Variables**:
+
+| Name | Value |
+| --- | --- |
+| `API_BASE` | `https://<you>-asterism-api.hf.space` |
+
+A repository **variable**, not a secret; a Space URL is public anyway.
+
+Then run it once by hand to check it: **Actions → Keep the API awake → Run
+workflow**. It is also a free uptime monitor — if the API is genuinely down,
+the job fails and GitHub emails you. Cold starts are not mistaken for outages,
+because it retries five times over about ten minutes first.
+
+Two things to know:
+
+- **Scheduled runs are delayed under load**, sometimes by a lot. Pinging every
+  six hours against a 48-hour timeout leaves room for that; do not tighten the
+  schedule to compensate for something that is not a problem.
+- **GitHub disables scheduled workflows after 60 days of repository
+  inactivity**, and emails you first. Any commit resets it.
+
+If you would rather not use Actions, [cron-job.org](https://cron-job.org) and
+UptimeRobot both do the same thing for free against the same `/health` URL.
+
+## What free costs you
 
 **Storage is not persistent.** Without a volume, the disk is wiped on every
 rebuild and on wake — so visitors' libraries disappear. Fine for a demo,
@@ -174,3 +202,7 @@ quota. The Space logs will show `RESOURCE_EXHAUSTED`.
 
 **A document indexes, then vanishes after a while.** The Space restarted and
 storage was not persistent. See above.
+
+**The first visitor of the day waits a long time.** The keep-alive is not
+running. Check that `API_BASE` is set as a repository variable, and that
+Actions → Keep the API awake shows recent green runs.
