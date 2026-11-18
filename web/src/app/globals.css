@@ -10,28 +10,31 @@
    ============================================================ */
 
 :root {
-  /* Cool-neutral ramp: n-0 is the page floor, n-12 is the strongest ink. */
-  --n-0: #ffffff;
-  --n-1: #fafafb;
-  --n-2: #f3f3f6;
-  --n-3: #e7e7ec;
-  --n-4: #dadae1;
-  --n-5: #c3c3cd;
-  --n-6: #a2a2af;
-  --n-7: #86868f;
-  --n-8: #6a6a75;
-  --n-9: #53535d;
-  --n-10: #3e3e47;
-  --n-11: #26262d;
-  --n-12: #131317;
+  /* Light: bone paper and black ink. Warm-neutral ramp, n-0 the page floor,
+     n-12 the strongest ink. Deliberately not cream — the warmth is in the
+     greys, not the paper. */
+  --n-0: #fcfcfa;
+  --n-1: #f6f5f2;
+  --n-2: #eeede9;
+  --n-3: #e2e1dc;
+  --n-4: #d4d3cd;
+  --n-5: #bdbbb4;
+  --n-6: #9d9b94;
+  --n-7: #807e78;
+  --n-8: #67655f;
+  --n-9: #4f4e49;
+  --n-10: #3a3936;
+  --n-11: #232220;
+  --n-12: #0f0f0e;
 
-  /* One accent hue, rationed: focus, active citation, selected row.
-     Primary actions use neutral ink, not colour. */
-  --accent: #15607e;
-  --accent-hover: #114f68;
+  /* Brass, rationed: citations, focus, selection, the lead star of the mark.
+     Primary actions use ink, not colour. Darkened on paper so it still
+     passes contrast as text. */
+  --accent: #8a6420;
+  --accent-hover: #74531a;
   --accent-fg: #ffffff;
-  --accent-soft: #e4f1f7;
-  --accent-line: #a9cfe0;
+  --accent-soft: #f4ecda;
+  --accent-line: #dcc596;
 
   --danger: #b4231f;
   --danger-soft: #fdeceb;
@@ -40,25 +43,27 @@
 }
 
 [data-theme="dark"] {
-  --n-0: #0c0c0f;
-  --n-1: #111114;
-  --n-2: #17171c;
-  --n-3: #232329;
-  --n-4: #2d2d34;
-  --n-5: #3b3b44;
-  --n-6: #4e4e59;
-  --n-7: #6d6d78;
-  --n-8: #888893;
-  --n-9: #9f9faa;
-  --n-10: #b7b7c1;
-  --n-11: #d6d6dd;
-  --n-12: #f1f1f4;
+  /* Dark is the default: warm black, bone text. The greys lean warm so the
+     black reads as ink rather than an empty screen. */
+  --n-0: #0a0a0b;
+  --n-1: #101011;
+  --n-2: #161618;
+  --n-3: #222224;
+  --n-4: #2c2c2f;
+  --n-5: #3a3a3d;
+  --n-6: #545350;
+  --n-7: #6f6d68;
+  --n-8: #8c8a84;
+  --n-9: #a5a39c;
+  --n-10: #bfbdb6;
+  --n-11: #dddbd4;
+  --n-12: #f1efe8;
 
-  --accent: #4fa3c7;
-  --accent-hover: #6bb5d5;
-  --accent-fg: #06222e;
-  --accent-soft: #12303c;
-  --accent-line: #235a71;
+  --accent: #c9a45c;
+  --accent-hover: #d8b672;
+  --accent-fg: #14110a;
+  --accent-soft: #221c10;
+  --accent-line: #5c4a28;
 
   --danger: #f0736c;
   --danger-soft: #35191a;
@@ -106,12 +111,29 @@
   --text-2xl: 2rem; /* 32 */
   --text-3xl: 2.75rem; /* 44 */
 
+  /* Off the scale on purpose, and only ever for a focusable text field on a
+     touch screen: iOS Safari zooms the page into any input it finds set below
+     16px, and it does not zoom back out. Every step above is smaller, so this
+     has to exist rather than being picked from the scale. */
+  --text-field: 1rem; /* 16 */
+
+  /* A reading step for serif prose. Newsreader sets small for its size, so
+     the answer column needs a touch more than --text-base to read evenly. */
+  --text-read: 1.0625rem; /* 17 */
+
+  /* The landing hero alone. */
+  --text-4xl: clamp(2.75rem, 1.6rem + 4.6vw, 4.5rem);
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
 
   /* Fixed chrome dimensions, so density stays consistent. */
   --spacing-header: 44px;
   --spacing-control: 32px;
+  /* The chat sheet at rest, on the stacked layout. The viewer ends here, so
+     the two must not drift apart — ChatSheet holds the same number. */
+  --spacing-sheet-peek: 52px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -184,9 +206,14 @@
 
 @layer components {
   .prose-answer {
-  font-size: var(--text-base);
-  line-height: 1.65;
+  font-family: var(--font-serif);
+  font-size: var(--text-read);
+  line-height: 1.62;
   color: var(--n-11);
+  /* The answer column can be dragged narrow, and a model will happily emit a
+     URL or a hash with no break opportunity in it. Breaking mid-word is ugly;
+     a paragraph pushing the pane sideways is worse. */
+  overflow-wrap: anywhere;
 }
 .prose-answer > * + * {
   margin-top: 12px;
@@ -245,7 +272,18 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+/* A markdown table has no width the answer column can talk it out of, so it
+   gets its own scroller rather than being allowed to widen the pane. Cells
+   stop squeezing at something still readable, and past that the table
+   scrolls — `overflow-wrap: anywhere` above would otherwise let a column
+   collapse to one character per line. */
+.prose-answer-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
 .prose-answer table {
+  /* Figures in a grid read better in the interface face than in the serif. */
+  font-family: var(--font-sans);
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
@@ -254,6 +292,7 @@
 .prose-answer td {
   border: 1px solid var(--n-3);
   padding: 6px 8px;
+  min-width: 8ch;
   text-align: left;
 }
 .prose-answer th {
@@ -316,7 +355,124 @@
 }
 }
 
+/* ============================================================
+   LANDING — motion for the front page alone.
+   Everything here is progressive: scroll-driven animations only run where
+   the browser supports view timelines, and every element's resting state is
+   its final state, so the page is complete without any of it.
+   ============================================================ */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* The workspace preview arrives tilted back and lies flat as it is read. */
+@keyframes untilt {
+  from {
+    transform: perspective(1800px) rotateX(26deg) scale(0.9);
+    opacity: 0.4;
+  }
+}
+
+/* A marker stroke, left to right. A hard-stopped gradient is the only way to
+   size a background band; there is no visible colour ramp in it. */
+@keyframes sweep {
+  from {
+    background-size: 0% 58%;
+  }
+}
+
+@keyframes fill-down {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes float-layer {
+  50% {
+    transform: translateZ(10px);
+  }
+}
+
+@layer components {
+  .rise {
+    animation: rise 900ms var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* The highlighter. Brass at a third strength reads as a marker on either
+     paper; a printed page in the viewer overrides --hl with its own. */
+  .hl {
+    --hl-ink: var(--hl, color-mix(in srgb, var(--accent) 34%, transparent));
+    background: linear-gradient(var(--hl-ink), var(--hl-ink)) no-repeat left 62% / 100% 58%;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding: 0 1px;
+  }
+
+  /* The exploded document: a page split into its three layers in depth. */
+  .stack {
+    transform-style: preserve-3d;
+    transform: rotateX(58deg) rotateZ(-38deg);
+  }
+  .stack > * {
+    transform-style: preserve-3d;
+    transform: translateZ(var(--z));
+    transition: transform 900ms var(--ease-out);
+  }
+  /* The breath is on the layer's content, so it never fights the hover. */
+  .stack > * > :first-child {
+    animation: float-layer 6s ease-in-out infinite;
+    animation-delay: var(--d, 0ms);
+  }
+  .stack-host:hover .stack > * {
+    transform: translateZ(calc(var(--z) * 1.35));
+  }
+
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+    .tilt-in {
+      animation: untilt linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 42%;
+    }
+    .hl {
+      animation: sweep linear both;
+      animation-timeline: view();
+      animation-range: var(--r, cover 40% cover 50%);
+    }
+    .fill-down {
+      transform-origin: top;
+      animation: fill-down linear both;
+      animation-timeline: view();
+      animation-range: cover 15% cover 70%;
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .stack > * > :first-child,
+  .reveal,
+  .tilt-in,
+  .hl,
+  .fill-down,
+  .rise {
+    animation: none !important;
+  }
   *,
   *::before,
   *::after {

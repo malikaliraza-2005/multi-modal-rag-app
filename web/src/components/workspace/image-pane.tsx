@@ -23,16 +23,24 @@ export function ImagePane({
 
   return (
     <div className="relative flex h-full flex-col bg-n-1">
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-3 sm:p-6">
         {failed ? (
           <ViewerError
             title="Could not display this image"
             message="The file is indexed and answerable, but this browser has no decoder for its format."
           />
         ) : (
-          <div className="flex min-h-full items-center justify-center">
+          /* `-safe` centring: a picture zoomed past the pane is centred by
+             ordinary `items-center` into overflow on *both* sides, and the
+             half that spills backwards past the scroll origin cannot be
+             scrolled to. Safe alignment falls back to start exactly when that
+             would happen, so zoom never puts part of the image out of reach.
+
+             `shrink-0` is what makes the zoom apply at all: a flex item is
+             shrunk back to the line, so the width below was being undone. */
+          <div className="flex min-h-full items-center-safe justify-center-safe">
             <div
-              className="overflow-hidden rounded-lg border border-n-3 bg-n-0"
+              className="shrink-0 overflow-hidden rounded-lg border border-n-3 bg-n-0"
               style={{ width: `${scale * 100}%` }}
             >
               {/* Plain <img>: the source is an arbitrary user upload on another

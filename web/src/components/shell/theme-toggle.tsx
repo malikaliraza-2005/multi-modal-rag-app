@@ -2,22 +2,16 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
-
-const noopSubscribe = () => () => {};
+import { useHydrated } from "@/hooks/use-hydrated";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
-  );
+  const hydrated = useHydrated();
 
   // The resolved theme is unknown on the server; render the frame so the
   // header does not reflow once it is.
-  if (!mounted) return <div className="h-8 w-8" />;
+  if (!hydrated) return <div className="h-8 w-8 shrink-0" />;
 
   const isDark = resolvedTheme === "dark";
 

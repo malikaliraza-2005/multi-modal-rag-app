@@ -33,25 +33,27 @@ export function AsterismMark({
         fill="none"
         opacity="0.28"
       />
-      <circle cx="8" cy="3.2" r="1.75" fill="currentColor" />
+      {/* The lead star is brass: the one colour the product spends. */}
+      <circle cx="8" cy="3.2" r="1.75" fill="var(--accent)" />
       <circle cx="3" cy="12.1" r="1.75" fill="currentColor" />
       <circle cx="13" cy="12.1" r="1.75" fill="currentColor" />
     </svg>
   );
 }
 
-/** The clickable wordmark, used in the app's own chrome — it always goes to the
-    library, which is the app's home.
+/** The clickable wordmark, used in the app's own chrome — it always goes back
+    to the landing page, the way a logo does on most sites. The library stays
+    one click away from there.
 
     Deliberately takes no href. The landing page renders `AsterismMark` inside
-    plain text instead: there, the mark is a logo and not a way out of the page
-    you just arrived on. */
+    plain text instead: there, the mark is a logo and not a link to the page
+    you are already on. */
 export function Wordmark() {
   return (
     <Link
-      href="/library"
+      href="/"
       className="flex shrink-0 items-center gap-2 rounded pr-1 text-n-12 transition-colors duration-150 hover:text-n-10"
-      aria-label="Asterism — go to the library"
+      aria-label="Asterism — go to the home page"
     >
       <AsterismMark />
       <span className="text-sm font-semibold tracking-tight">Asterism</span>

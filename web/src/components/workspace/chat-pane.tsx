@@ -1,77 +1,44 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import { RotateCcw, TriangleAlert } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { api, type DocumentRecord, type Source } from "@/lib/api";
+import type { Chat, Turn } from "@/hooks/use-chat";
+import type { DocumentRecord } from "@/lib/api";
 import { KIND_NOUN } from "@/lib/locator";
 import { Composer } from "./composer";
 import { SourceList } from "./source-list";
 
-type Turn = {
-  id: number;
-  question: string;
-  answer?: string;
-  sources?: Source[];
-  error?: string;
-};
-
-let nextId = 0;
-
+/** The transcript and its composer. Purely presentational: the conversation
+    itself is owned by `useChat` in the workspace, so the pane can be torn down
+    and rebuilt in the other layout without losing it. */
 export function ChatPane({
-  docId,
+  chat,
   doc,
   onGoToPage,
 }: {
-  docId: string;
+  chat: Chat;
   doc: DocumentRecord;
   onGoToPage: (page: number) => void;
 }) {
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const { turns, pending, send, retry } = chat;
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const ask = useMutation({
-    mutationFn: ({ question }: { id: number; question: string }) =>
-      api.query(docId, question),
-    onSuccess: (data, { id }) =>
-      setTurns((t) =>
-        t.map((turn) =>
-          turn.id === id
-            ? { ...turn, answer: data.answer, sources: data.sources }
-            : turn,
-        ),
-      ),
-    onError: (error, { id }) =>
-      setTurns((t) =>
-        t.map((turn) =>
-          turn.id === id ? { ...turn, error: error.message } : turn,
-        ),
-      ),
-  });
-
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // `nearest` keeps the scroll inside the transcript: on the narrow layout
+    // the pane sits in a sheet, and the default would drag its container too.
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [turns]);
 
-  function send(question: string) {
-    const id = nextId++;
-    setTurns((t) => [...t, { id, question }]);
-    ask.mutate({ id, question });
-  }
-
-  function retry(turn: Turn) {
-    setTurns((t) =>
-      t.map((x) => (x.id === turn.id ? { ...x, error: undefined } : x)),
-    );
-    ask.mutate({ id: turn.id, question: turn.question });
-  }
-
   return (
-    <div className="flex h-full flex-col bg-n-0">
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-2xl px-5 py-6">
+    // A container, not a media query: the pane is dragged to whatever width
+    // the reader wants, so everything inside it sizes to the pane. On the
+    // narrow layout the same pane fills the sheet and the thresholds still
+    // read correctly, which a `sm:` would not.
+    <div className="@container/chat flex h-full flex-col bg-n-0">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="mx-auto w-full max-w-2xl px-4 py-6 @sm/chat:px-5">
           {turns.length === 0 ? (
             <EmptyState doc={doc} onPick={send} />
           ) : (
@@ -91,10 +58,23 @@ export function ChatPane({
         </div>
       </div>
 
-      <Composer onSend={send} disabled={ask.isPending} />
+      <Composer onSend={send} disabled={pending} />
     </div>
   );
 }
+
+/** A table is the one thing an answer can contain that has a width of its own
+    and will not negotiate. Given its own scroller it stays inside the column
+    at any pane width; without one it sets the width of the pane. */
+const MARKDOWN = {
+  // Children only: react-markdown also hands down the mdast `node`, which is
+  // not a DOM attribute and must not reach the element.
+  table: ({ children }: { children?: React.ReactNode }) => (
+    <div className="prose-answer-scroll">
+      <table>{children}</table>
+    </div>
+  ),
+};
 
 function TurnView({
   turn,
@@ -114,7 +94,7 @@ function TurnView({
       {/* The question is a compact filled block; the answer is plain prose.
           Dropping the assistant bubble makes the pane read as a document. */}
       <div className="mb-4 flex justify-end">
-        <p className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-n-2 px-3 py-2 text-sm leading-relaxed text-n-11">
+        <p className="max-w-[85%] wrap-anywhere whitespace-pre-wrap rounded-lg bg-n-2 px-3 py-2 text-sm leading-relaxed text-n-11">
           {turn.question}
         </p>
       </div>
@@ -144,7 +124,9 @@ function TurnView({
       {turn.answer && (
         <>
           <div className="prose-answer">
-            <Markdown remarkPlugins={[remarkGfm]}>{turn.answer}</Markdown>
+            <Markdown remarkPlugins={[remarkGfm]} components={MARKDOWN}>
+              {turn.answer}
+            </Markdown>
           </div>
           {turn.sources && (
             <SourceList
@@ -237,7 +219,7 @@ function EmptyState({
           <button
             key={s}
             onClick={() => onPick(s)}
-            className="block w-full rounded px-2 py-1.5 text-left text-xs text-n-9 transition-colors duration-100 hover:bg-n-2 hover:text-n-11"
+            className="block w-full rounded px-2 py-1.5 text-left text-xs text-n-9 transition-colors duration-100 hover:bg-n-2 hover:text-n-11 pointer-coarse:py-2.5"
           >
             {s}
           </button>

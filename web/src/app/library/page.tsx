@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function LibraryPage() {
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-header shrink-0 items-center gap-3 border-b border-n-3 px-4">
+      <header className="flex h-header shrink-0 items-center gap-3 border-b border-n-3 px-3 sm:px-4">
         <Wordmark />
         <div className="ml-auto flex items-center gap-1">
           <Link
@@ -28,7 +28,7 @@ export default function LibraryPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-4xl px-6 py-12">
+        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
           <div className="mb-8">
             <h1 className="text-lg font-semibold tracking-tight text-n-12">
               Library

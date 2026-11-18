@@ -33,7 +33,7 @@ export function Composer({
   }
 
   return (
-    <div className="border-t border-n-3 bg-n-0 px-4 py-3">
+    <div className="border-t border-n-3 bg-n-0 px-3 py-3 sm:px-4">
       {/* The wrapper carries the focus indication, so the textarea suppresses
           its own outline — otherwise the two stack. */}
       <div className="flex items-end gap-2 rounded-lg border border-n-3 bg-n-0 px-3 py-2 transition-colors duration-150 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25">
@@ -49,7 +49,10 @@ export function Composer({
               submit();
             }
           }}
-          className="min-h-6 flex-1 resize-none bg-transparent py-0.5 text-sm leading-6 text-n-11 outline-none focus-visible:outline-none placeholder:text-n-6"
+          // `text-field` on a touch pointer, not at a width breakpoint: what
+          // triggers iOS Safari's zoom-on-focus is the input being under 16px,
+          // and that is true of a tablet in landscape too.
+          className="min-h-6 min-w-0 flex-1 resize-none bg-transparent py-0.5 text-field leading-6 text-n-11 outline-none pointer-fine:text-sm focus-visible:outline-none placeholder:text-n-6"
         />
         <button
           onClick={submit}
@@ -60,7 +63,10 @@ export function Composer({
           <ArrowUp size={14} strokeWidth={2} />
         </button>
       </div>
-      <p className="mt-1.5 px-1 text-2xs text-n-6">
+      {/* A soft keyboard has no Shift + Enter, so the hint is addressed to the
+          pointer that implies a hardware one — not to a window width, which
+          only ever stood in for the same thing. */}
+      <p className="mt-1.5 hidden px-1 text-2xs text-n-6 pointer-fine:block">
         Enter to send · Shift + Enter for a new line
       </p>
     </div>

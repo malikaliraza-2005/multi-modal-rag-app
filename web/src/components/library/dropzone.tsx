@@ -50,7 +50,7 @@ export function Dropzone() {
           if (!busy) accepted(e.dataTransfer.files);
         }}
         className={cn(
-          "relative overflow-hidden rounded-lg border border-dashed px-6 py-8",
+          "relative overflow-hidden rounded-lg border border-dashed px-4 py-7 sm:px-6 sm:py-8",
           "transition-colors duration-150 ease-out",
           dragging ? "border-accent bg-accent-soft" : "border-n-4 bg-n-1",
           busy && "border-solid border-n-3",
@@ -135,7 +135,7 @@ function FormatList({ extensions }: { extensions: string[] }) {
 function IndexingState() {
   return (
     <div className="flex flex-col items-center gap-3 text-center">
-      <div className="h-1 w-48 overflow-hidden rounded-full bg-n-3">
+      <div className="h-1 w-full max-w-48 overflow-hidden rounded-full bg-n-3">
         <div className="indeterminate h-full w-1/3 rounded-full bg-n-8" />
       </div>
       <div className="space-y-1">

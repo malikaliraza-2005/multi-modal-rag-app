@@ -47,7 +47,9 @@ export function SourceList({
                   }
                   className={cn(
                     "flex min-w-0 flex-1 items-center gap-2 rounded px-1.5 py-1 text-left",
-                    "transition-colors duration-100",
+                    // A citation is a tap target on a touch screen; at the
+                    // density this row is set to, its text alone is not one.
+                    "transition-colors duration-100 pointer-coarse:min-h-9",
                     hasPage
                       ? "hover:bg-accent-soft"
                       : "cursor-default opacity-70",
@@ -66,7 +68,11 @@ export function SourceList({
                       ? citationLabel(locator, source.page)
                       : citationBlank(locator)}
                   </span>
-                  <span className="w-12 shrink-0 text-2xs text-n-7">
+                  {/* The snippet is the only part that tells you whether this
+                      source is the one you want, so it is the last to be given
+                      up. The kind and the score go first, in that order, as
+                      the pane narrows. */}
+                  <span className="hidden w-12 shrink-0 text-2xs text-n-7 @sm/chat:block">
                     {CATEGORY_LABEL[source.category]}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-xs text-n-8">
@@ -79,7 +85,7 @@ export function SourceList({
                   onClick={() => setExpanded(isOpen ? null : i)}
                   aria-expanded={isOpen}
                   aria-label={isOpen ? "Hide excerpt" : "Show excerpt"}
-                  className="shrink-0 rounded px-1.5 text-2xs text-n-6 transition-colors duration-100 hover:bg-n-2 hover:text-n-9"
+                  className="shrink-0 rounded px-2 text-2xs text-n-6 transition-colors duration-100 hover:bg-n-2 hover:text-n-9 pointer-coarse:px-3"
                 >
                   {isOpen ? "less" : "more"}
                 </button>
@@ -98,11 +104,15 @@ export function SourceList({
   );
 }
 
-/** Cosine relevance, clamped — Chroma can return small negatives. */
+/** Cosine relevance, clamped — Chroma can return small negatives.
+
+    Costs 78px of a row, which is most of the snippet in a pane dragged to its
+    minimum. It is the least load-bearing thing in the row, so it is the first
+    to go. */
 function ScoreBar({ score }: { score: number }) {
   const pct = Math.max(0, Math.min(1, score));
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
+    <span className="hidden shrink-0 items-center gap-1.5 @md/chat:flex">
       <span className="h-1 w-10 overflow-hidden rounded-full bg-n-3">
         <span
           className="block h-full rounded-full bg-accent/60"

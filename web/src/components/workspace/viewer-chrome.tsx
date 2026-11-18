@@ -64,7 +64,11 @@ export function usePageScroller(handleRef: React.RefObject<ViewerHandle | null>)
 }
 
 /** Observe a pane's own width, so content is laid out to the split rather than
-    to the window. */
+    to the window.
+
+    `contentRect` is the content box, so this is the width actually available
+    for content — the element's own padding is already off it. Callers must not
+    subtract it again. */
 export function usePaneWidth(ref: React.RefObject<HTMLElement | null>) {
   const [width, setWidth] = useState(0);
   useEffect(() => {

@@ -45,7 +45,7 @@ export function PreviewPane({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto px-6 py-6"
+        className="flex-1 overflow-auto px-3 py-4 sm:px-6 sm:py-6"
       >
         {isError ? (
           <ViewerError title="Preview unavailable" message={error.message} />
@@ -58,7 +58,7 @@ export function PreviewPane({
                 key={page.number}
                 ref={registerPage(page.number)}
                 className={cn(
-                  "rounded-lg border border-n-3 bg-n-0 px-7 py-6",
+                  "rounded-lg border border-n-3 bg-n-0 px-4 py-5 sm:px-7 sm:py-6",
                   flashPage === page.number && "cite-flash",
                 )}
               >
@@ -208,7 +208,7 @@ function PreviewSkeleton() {
       {Array.from({ length: 2 }).map((_, i) => (
         <div
           key={i}
-          className="space-y-3 rounded-lg border border-n-3 bg-n-0 px-7 py-6"
+          className="space-y-3 rounded-lg border border-n-3 bg-n-0 px-4 py-5 sm:px-7 sm:py-6"
         >
           <div className="shimmer h-3 w-10 rounded" />
           <div className="shimmer h-4 w-2/5 rounded" />

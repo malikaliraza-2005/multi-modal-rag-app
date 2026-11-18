@@ -42,14 +42,16 @@ export function PdfPane({
   );
 
   const scale = ZOOM_STEPS[zoomIndex];
-  const renderWidth = width > 0 ? Math.max(240, (width - 48) * scale) : undefined;
+  // `width` is already the padded-in column. A page fills it at 100% and
+  // overflows into the scroller above that, which is what zoom is for.
+  const renderWidth = width > 0 ? Math.max(240, width * scale) : undefined;
 
   return (
     <div className="relative flex h-full flex-col bg-n-1">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto px-6 py-6"
+        className="flex-1 overflow-auto px-3 py-4 sm:px-6 sm:py-6"
       >
         {failed ? (
           <ViewerError title="Could not render this PDF" message={failed} />

@@ -22,6 +22,10 @@ export function MenuContent({
           // Shadow appears only on genuinely floating layers.
           "z-50 min-w-56 overflow-hidden rounded-lg border border-n-3 bg-n-0 p-1",
           "shadow-[0_8px_24px_-8px_rgb(0_0_0/0.18)]",
+          // Items are shrink-to-fit, so an item as long as a filename would
+          // otherwise size the menu past the screen edge. Radix measures the
+          // room it actually has; the menu never asks for more than that.
+          "max-w-(--radix-dropdown-menu-content-available-width)",
           className,
         )}
         {...props}
@@ -39,7 +43,7 @@ export function MenuItem({
   return (
     <DropdownMenu.Item
       className={cn(
-        "flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1.5 text-sm",
+        "flex min-w-0 cursor-pointer select-none items-center gap-2 rounded px-2 py-1.5 text-sm",
         "text-n-10 outline-none transition-colors duration-100",
         "data-highlighted:bg-n-2 data-highlighted:text-n-12",
         className,

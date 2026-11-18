@@ -28,8 +28,11 @@ export function DocumentSwitcher({
   return (
     <Menu>
       <MenuTrigger asChild>
-        <Button variant="ghost" size="md" className="min-w-0 max-w-80">
-          <span className="truncate text-sm text-n-11">
+        {/* `shrink` undoes the Button's own `shrink-0`: without it the trigger
+            holds its full max-content width and a long filename pushes the
+            header — and the page with it — past the viewport. */}
+        <Button variant="ghost" size="md" className="min-w-0 max-w-80 shrink">
+          <span className="min-w-0 truncate text-sm text-n-11">
             {baseName(filename)}
           </span>
           <ChevronsUpDown size={14} strokeWidth={1.5} className="shrink-0 text-n-6" />
