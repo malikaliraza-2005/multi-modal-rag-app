@@ -5,14 +5,14 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, UploadFile, File
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
-from . import filetypes, limits, store
+from . import filetypes, limits, remote_store, store
 from .config import MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, UPLOADS_PER_HOUR
-from .pipeline import process_document, load_vector_store
+from .pipeline import process_document
 from .rag import run_query
-from .vectorstore import delete_collection
+from .vectorstore import delete_collection, ensure_collection
 
 # Preview figures are written by us, one directory per document — but the name
 # still arrives from the URL, so it is matched rather than trusted.
@@ -33,7 +33,12 @@ async def lifespan(app: FastAPI):
     # startup instead of making the first query pay for it.
     from .vectorstore import _embeddings
 
-    store.purge_orphans()
+    remote_store.ensure_repo()
+    # Only tidy the local cache against a listing known to be complete. If the
+    # repo could not be reached, every hydrated document would look like an
+    # orphan and purging would delete the cache we are about to serve from.
+    if await run_in_threadpool(store.hydrate):
+        store.purge_orphans()
     await run_in_threadpool(_embeddings.embed_query, "warmup")
     yield
 
@@ -88,6 +93,13 @@ def _require_record(doc_id: str, library_id: str) -> dict:
     return record
 
 
+@app.get("/", include_in_schema=False)
+def root():
+    """A bare API root that 404s reads as a broken deployment. Send anyone who
+    opens the host directly to the reference instead."""
+    return RedirectResponse(url="/docs")
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -117,8 +129,8 @@ def get_document(doc_id: str, library: str = Depends(require_library)):
 @app.get("/documents/{doc_id}/file")
 def get_document_file(doc_id: str, library: str = Depends(require_library)):
     record = _require_record(doc_id, library)
-    path = store.source_path(doc_id, record["ext"])
-    if not path.exists():
+    path = store.ensure_source(doc_id, record["ext"])
+    if path is None:
         raise HTTPException(status_code=404, detail="File missing from storage")
     return FileResponse(path, media_type=record["media_type"], filename=record["filename"])
 
@@ -140,8 +152,8 @@ def get_preview_figure(
     _require_record(doc_id, library)
     if not _FIGURE_NAME.match(name):
         raise HTTPException(status_code=404, detail="No such figure")
-    path = store.preview_media_dir(doc_id) / name
-    if not path.exists():
+    path = store.preview_figure(doc_id, name)
+    if path is None:
         raise HTTPException(status_code=404, detail="No such figure")
     return FileResponse(path, media_type="image/jpeg")
 
@@ -212,7 +224,8 @@ async def query_document(
     _require_record(doc_id, library)
 
     def _run():
-        db = load_vector_store(store.collection_name(doc_id))
+        # Rebuilds the collection first if the index was lost to a restart.
+        db = ensure_collection(store.collection_name(doc_id), doc_id)
         return run_query(db, body.question)
 
     try:

@@ -11,6 +11,7 @@ from .vectorstore import (
     build_image_docs,
     build_table_docs,
     create_vector_store,
+    save_chunks,
 )
 
 
@@ -104,6 +105,9 @@ def process_document(file_path: str, doc_id: str, collection_name: str, filename
         )
 
     create_vector_store(all_docs, collection_name=collection_name)
+    # Written before the record, because the record is what publishes the whole
+    # document to durable storage and this has to be in place by then.
+    save_chunks(doc_id, all_docs)
 
     # PDFs and images render natively in the browser; everything else needs the
     # structural preview to have anything to show beside the answer.
@@ -135,9 +139,3 @@ def process_document(file_path: str, doc_id: str, collection_name: str, filename
     }
 
 
-def load_vector_store(collection_name: str):
-    return create_vector_store(
-        all_docs=None,
-        collection_name=collection_name,
-        load_existing=True,
-    )

@@ -6,11 +6,15 @@ host.
 | | Where | Why |
 | --- | --- | --- |
 | `web/` | **Vercel** | A Next.js app. This is what Vercel is for. Free. |
-| `api/` | **Hugging Face Spaces** | 2.3 GB of Python dependencies, two system binaries, and a model that wants ~2 GB of RAM. Free tier gives 16 GB. |
+| `api/` | **Hugging Face Spaces**, on ZeroGPU | 2.3 GB of Python dependencies, two system binaries, and a model that wants ~2 GB of RAM. Nothing else free will hold it. |
 
 The API cannot go anywhere serverless. Vercel Functions and AWS Lambda cap a
-deployment at 250 MB unzipped; torch alone is 535 MB, and none of them offer the
-writable disk that uploads and the Chroma index need.
+deployment at 250 MB unzipped; torch alone is 535 MB. Nor can it go on the free
+container hosts — Render and Koyeb both stop at 512 MB of RAM against a
+footprint four times that.
+
+Neither can it rely on a disk. No free tier offers one, so uploads and the index
+live in a Hub dataset repo instead; see [Storage](#storage).
 
 **Deploy the API first.** The web app needs its URL, and the API needs the web
 app's origin — so the order is: API → web → back to the API to fill in
@@ -26,15 +30,35 @@ At [huggingface.co/new-space](https://huggingface.co/new-space):
 
 - **Name** — `asterism-api`
 - **License** — whatever suits you
-- **SDK** — **Docker**, then the **Blank** template
-- **Hardware** — CPU basic (free)
+- **SDK** — **Gradio**, then the **Blank** template
+- **Hardware** — **ZeroGPU**
 - **Visibility** — Public
+
+> **Pick ZeroGPU, not CPU Basic.** What Spaces put behind a subscription is
+> *compute*, not any particular SDK: Gradio and Docker Spaces both need PRO on
+> CPU Basic. The tier still free to a personal account is up to **two Gradio
+> Spaces on ZeroGPU**, so the hardware setting is what decides whether this
+> deploy is free. Choosing CPU Basic paywalls the Space whichever SDK you pick.
+>
+> ZeroGPU hands a GPU to functions decorated with `@spaces.GPU`. This API has
+> none — it embeds on CPU, and Groq and Gemini do the heavy lifting over HTTP —
+> so it holds a ZeroGPU slot without ever drawing GPU time or spending the
+> daily quota. `api/requirements.txt` includes `spaces` and `app.py` imports it,
+> which is how a Space declares itself ZeroGPU-compatible.
+>
+> Hosting a ZeroGPU Space needs an account **in good standing**: verified email,
+> and older than 30 days.
+>
+> `app.py` starts the FastAPI app; Gradio only renders a status page at `/ui`.
+> The repo's `Dockerfile` still works and is kept for any host that takes a
+> container — it is simply not what Spaces uses.
 
 ### Push the code
 
-A Space is its own git repo, and it needs a README with YAML frontmatter that
-would render as a stray table on GitHub. So the two repos stay separate, and a
-script syncs the files the image needs:
+A Space is its own git repo, and it wants a layout this project does not use:
+`requirements.txt` and `packages.txt` at the root, an `app.py` entry point, and
+a README carrying YAML frontmatter that would render as a stray table on
+GitHub. A script assembles that:
 
 ```bash
 sh deploy/huggingface/push.sh https://huggingface.co/spaces/<you>/asterism-api
@@ -44,9 +68,9 @@ Git will ask for your HF username and, as the password, an access token with
 **write** permission from
 [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
 
-The first build takes a while — it installs the dependencies and bakes both
-models into the image so that the first real request is not paying for a
-400 MB download. Watch the **Logs** tab.
+The first build takes a while — apt packages, then roughly 2 GB of Python
+dependencies. Watch the **Logs** tab. The layout and embedding models download
+on the first request after that, so the very first upload is slower still.
 
 ### Set the secrets
 
@@ -56,6 +80,8 @@ models into the image so that the first real request is not paying for a
 | --- | --- | --- |
 | `GROQ_API_KEY` | Secret | from [console.groq.com](https://console.groq.com) |
 | `GOOGLE_API_KEY` | Secret | from [aistudio.google.com](https://aistudio.google.com/apikey) |
+| `HF_DATASET_REPO` | Secret | `<you>/asterism-store` — see [Storage](#storage) |
+| `HF_TOKEN` | Secret | a **write** token, same page as the one you push with |
 | `ALLOWED_ORIGINS` | Variable | fill in after step 2 |
 
 ### Check it
@@ -67,7 +93,8 @@ curl https://<you>-asterism-api.hf.space/health
 curl https://<you>-asterism-api.hf.space/filetypes
 ```
 
-`/docs` in a browser gives the interactive API reference.
+`/docs` in a browser gives the interactive API reference, and the Space's root
+redirects there. `/ui` is the Gradio status page.
 
 ---
 
@@ -137,17 +164,31 @@ Two things to know:
 If you would rather not use Actions, [cron-job.org](https://cron-job.org) and
 UptimeRobot both do the same thing for free against the same `/health` URL.
 
+## Storage
+
+A free Space's disk is wiped on every rebuild and on every wake, so it cannot be
+where documents live — without something else, visitors' libraries disappear and
+it reads as a bug rather than a tier. Persistent storage in Settings fixes it for
+$5/mo, but a **private dataset repo** does the same job for nothing: a Hub
+account includes 100 GB of private repository storage, and the Spaces docs name
+the Datasets Hub as a supported place to keep Space state.
+
+Set `HF_DATASET_REPO` (e.g. `<you>/asterism-store`) and `HF_TOKEN` in the Space's
+secrets. The repo is created on first boot, private — nothing to set up by hand.
+
+What that gets you: once a document finishes indexing, its file, record, preview,
+figures and the chunks it was indexed from are written to the repo in a single
+commit, and pulled back on demand. The Chroma index is deliberately *not* stored
+— it is a mutable sqlite file, and committing it on every write would grow the
+repo's history without bound. It is rebuilt instead from the stored chunks on the
+first query after a restart, which costs a few seconds of CPU rather than another
+day's vision quota.
+
+Leave the two secrets unset and the Space still runs, exactly as before, against
+local disk alone — with everything lost on restart. `STORAGE_ROOT` and
+`CHROMA_DIR` only relocate the local cache; they are not what makes it durable.
+
 ## What free costs you
-
-**Storage is not persistent.** Without a volume, the disk is wiped on every
-rebuild and on wake — so visitors' libraries disappear. Fine for a demo,
-surprising for anyone who came back expecting their documents. To fix it, add
-persistent storage in Settings ($5/mo for 20 GB) and set:
-
-```
-STORAGE_ROOT=/data/storage
-CHROMA_DIR=/data/db/chroma_db
-```
 
 **The Gemini free tier allows 20 vision calls per day, in total.** One
 figure-heavy deck exhausts it for everyone until midnight UTC. Figure
@@ -191,9 +232,14 @@ web app's origin. It must include the scheme and no trailing slash.
 
 **Vercel build fails, "no Next.js app found".** Root Directory is not `web`.
 
-**Space build runs out of space or time.** The CPU-only torch index in the
-Dockerfile is what keeps this under control — if you edited that line, put it
-back.
+**Space build fails on a missing system library.** Add the package to
+`packages.txt` and push again — that is the file Spaces feeds to apt. A
+`libGL.so` or `libgthread` error means exactly this.
+
+**The build is slow.** Expected. Spaces installs the default torch wheel, which
+carries CUDA payload this never executes — around 2 GB that a container build
+could have avoided. It still fits and still runs; it just takes a while, and
+only on builds where the dependency cache misses.
 
 **Uploads 429.** `UPLOADS_PER_HOUR` is doing its job. Raise it, or wait.
 
@@ -201,7 +247,14 @@ back.
 quota. The Space logs will show `RESOURCE_EXHAUSTED`.
 
 **A document indexes, then vanishes after a while.** The Space restarted and
-storage was not persistent. See above.
+`HF_DATASET_REPO` / `HF_TOKEN` are not set, so nothing was written anywhere
+durable. See [Storage](#storage). If they *are* set, check the logs for
+`Remote store:` — a bad token or a repo the token cannot write to degrades to
+local-only deliberately rather than failing the upload, and says so.
+
+**The Space will not start on ZeroGPU.** Hosting one needs a verified email and
+an account older than 30 days, and a personal account is capped at two. CPU
+Basic is not the fallback — it is the paid tier.
 
 **The first visitor of the day waits a long time.** The keep-alive is not
 running. Check that `API_BASE` is set as a repository variable, and that

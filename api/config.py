@@ -12,11 +12,18 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
 # Where uploads and the vector index live. Overridable because a container's
-# only durable directory is wherever its volume is mounted — /data on Hugging
-# Face Spaces — which is never inside the source tree.
+# only durable directory is wherever its volume is mounted — which is never
+# inside the source tree.
+#
+# On a free Space none of this survives a restart, so when `api/remote_store.py`
+# is configured these are a *cache* in front of the Hub dataset repo that
+# actually holds the data, not the storage itself.
 STORAGE_ROOT = Path(os.getenv("STORAGE_ROOT", ROOT_DIR / "storage"))
 STORAGE_DIR = STORAGE_ROOT / "documents"
 PREVIEW_DIR = STORAGE_ROOT / "previews"
+# The chunks a document was indexed from, kept so a wiped Chroma collection can
+# be rebuilt without re-parsing the file or paying for its vision calls again.
+CHUNK_DIR = STORAGE_ROOT / "chunks"
 PERSIST_DIRECTORY = os.getenv("CHROMA_DIR", str(ROOT_DIR / "db" / "chroma_db"))
 
 # Groq retires models fairly aggressively — llama-3.3-70b-versatile, which this

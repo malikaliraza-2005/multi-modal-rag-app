@@ -1,5 +1,9 @@
-# API
-fastapi==0.121.2
+# API.
+# FastAPI is kept new enough to accept Starlette 1.x. Spaces appends its own
+# `gradio[oauth,mcp]` pin to this file's install, and Gradio 6 wants
+# starlette>=1.0.1 — while every FastAPI up to 0.125 caps it below 0.51, which
+# makes the build unresolvable. 0.141 dropped the upper bound.
+fastapi==0.141.1
 uvicorn[standard]==0.41.0
 python-multipart==0.0.20
 pydantic==2.12.4
@@ -21,6 +25,19 @@ python-dotenv==1.2.2
 # are pure-Python readers, except [doc] and [ppt] — the legacy binary formats,
 # which shell out to LibreOffice.
 unstructured[pdf,image,docx,doc,odt,rtf,pptx,ppt,xlsx,csv,tsv,md,rst,epub,msg]==0.18.32
+
+# Durable storage. A free Space has no persistent disk, so `api/remote_store.py`
+# keeps uploads in a private dataset repo instead. It arrives with
+# sentence-transformers, but this pipeline calls it directly.
+huggingface_hub==1.22.0
+
+# ZeroGPU is the only Spaces hardware still free for a personal account, and it
+# recognises a Space by this import. Nothing here is decorated with
+# `@spaces.GPU` — the API embeds on CPU and calls Groq and Gemini over HTTP —
+# so it never requests a GPU or spends the daily quota.
+# Unpinned on purpose: the Space build appends its own exact `spaces==` pin to
+# this install, and two different pins for one package fail the whole build.
+spaces
 
 # Normalising every figure to a bounded JPEG before the vision call — Pillow
 # arrives with unstructured, but this pipeline depends on it directly.
