@@ -1,10 +1,53 @@
 import { ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { AsterismMark } from "@/components/shell/wordmark";
-import { Constellation } from "@/components/landing/constellation";
+import { Constellation } from "@/components/landing/constellation-lazy";
 import { ExplodedDocument } from "@/components/landing/exploded-document";
 import { WorkspacePreview } from "@/components/landing/workspace-preview";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+
+/* Canonical lives here, not in the layout: set there, every route would
+   inherit "/" and tell search engines it is a copy of the landing page. */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+/** Structured data: tells search engines this is a free web app, and what
+    it does, beyond what they can infer from the prose. */
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      description: SITE_DESCRIPTION,
+      inLanguage: "en",
+    },
+    {
+      "@type": "WebApplication",
+      "@id": `${SITE_URL}/#app`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Any",
+      browserRequirements: "Requires a modern web browser",
+      isAccessibleForFree: true,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      featureList: [
+        "Ask questions about PDF, Word, PowerPoint, Excel, image, text and email files",
+        "Answers cite the page, slide or sheet each claim came from",
+        "Reads figures and tables, not only text",
+        "No account or sign-up required",
+      ],
+      image: `${SITE_URL}/opengraph-image`,
+    },
+  ],
+};
 
 /* The landing page is the front door: there is no sign-in, so its only job is
    to say what the thing does and get out of the way. It reads from the same
@@ -64,6 +107,12 @@ const STEPS = [
 export default function LandingPage() {
   return (
     <div className="flex h-full flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
+        }}
+      />
       <header className="flex h-header shrink-0 items-center gap-2 border-b border-n-3 px-3 sm:px-4">
         <span className="flex shrink-0 items-center gap-2 text-n-12">
           <AsterismMark />

@@ -8,6 +8,8 @@ import { Wordmark } from "@/components/shell/wordmark";
 
 export const metadata: Metadata = {
   title: "Library — Asterism",
+  /* Each visitor's library is their own; there is nothing here for search. */
+  robots: { index: false, follow: true },
 };
 
 export default function LibraryPage() {

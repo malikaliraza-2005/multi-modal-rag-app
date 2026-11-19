@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -25,12 +26,30 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Asterism — ask a document, trace the answer back",
+    default: SITE_TITLE,
     template: "%s",
   },
-  description:
-    "Asterism indexes a PDF, deck, spreadsheet or image — its text, figures and tables alike — then answers questions about it, citing the page, slide or sheet each claim came from. Free to use, with no account to create.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  /* The share image comes from app/opengraph-image.tsx, which Next attaches
+     to og:image on its own; X reads og:image when twitter:image is absent. */
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  /* Only the landing page is public content; the app routes opt out. */
+  robots: { index: true, follow: true },
 };
 
 /* The workspace is a fixed-height app shell, not a scrolling page: when the
