@@ -1,11 +1,16 @@
 import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/shell/theme-toggle";
-import { AsterismMark } from "@/components/shell/wordmark";
 import { Constellation } from "@/components/landing/constellation-lazy";
 import { ExplodedDocument } from "@/components/landing/exploded-document";
+import {
+  FaqList,
+  Section,
+  SiteFooter,
+  SiteHeader,
+} from "@/components/landing/site-chrome";
 import { WorkspacePreview } from "@/components/landing/workspace-preview";
+import { SITE_FAQS, faqJsonLd, jsonLdScript } from "@/lib/formats";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 /* Canonical lives here, not in the layout: set there, every route would
@@ -46,6 +51,7 @@ const JSON_LD = {
       ],
       image: `${SITE_URL}/opengraph-image`,
     },
+    { ...faqJsonLd(SITE_FAQS), "@id": `${SITE_URL}/#faq` },
   ],
 };
 
@@ -56,15 +62,17 @@ const JSON_LD = {
    motion, every section still renders complete and still. */
 
 /** Mirrors `api/filetypes.py`, which is the real allowlist. Duplicated on
-    purpose: a marketing page should render when the API is not running. */
-const FORMATS = [
-  { label: "Documents", exts: "pdf · docx · doc · odt · rtf", cites: "page" },
-  { label: "Presentations", exts: "pptx · ppt", cites: "slide" },
-  { label: "Spreadsheets", exts: "xlsx · xls · csv · tsv", cites: "sheet" },
+    purpose: a marketing page should render when the API is not running.
+    `href` points at the format's own page where it has one. */
+const FORMATS: { label: string; exts: string; cites: string; href?: string }[] = [
+  { label: "Documents", exts: "pdf · docx · doc · odt · rtf", cites: "page", href: "/chat-with/pdf" },
+  { label: "Presentations", exts: "pptx · ppt", cites: "slide", href: "/chat-with/powerpoint" },
+  { label: "Spreadsheets", exts: "xlsx · xls · csv · tsv", cites: "sheet", href: "/chat-with/excel" },
   {
     label: "Images",
     exts: "png · jpg · webp · gif · bmp · tiff · heic",
     cites: "image",
+    href: "/chat-with/images",
   },
   { label: "Text & markup", exts: "txt · md · rst · html · xml · epub", cites: "section" },
   { label: "Mail", exts: "eml · msg", cites: "message" },
@@ -109,31 +117,9 @@ export default function LandingPage() {
     <div className="flex h-full flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
-        }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(JSON_LD) }}
       />
-      <header className="flex h-header shrink-0 items-center gap-2 border-b border-n-3 px-3 sm:px-4">
-        <span className="flex shrink-0 items-center gap-2 text-n-12">
-          <AsterismMark />
-          <span className="text-sm font-semibold tracking-tight">Asterism</span>
-        </span>
-        <div className="ml-auto flex min-w-0 items-center gap-1">
-          <a
-            href="#how"
-            className="hidden h-8 items-center rounded px-2.5 text-xs font-medium text-n-8 transition-colors duration-150 hover:bg-n-2 hover:text-n-11 sm:inline-flex"
-          >
-            How it works
-          </a>
-          <ThemeToggle />
-          <Link
-            href="/library"
-            className="ml-1 inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded bg-n-12 px-3 text-sm font-medium text-n-0 transition-colors duration-150 hover:bg-n-11"
-          >
-            Open library
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1 overflow-y-auto">
         <Hero />
@@ -142,7 +128,10 @@ export default function LandingPage() {
         <Formats />
         <HowItWorks />
         <Free />
-        <Footer />
+        <Section id="faq" eyebrow="Questions" title="Asked before you ask.">
+          <FaqList faqs={SITE_FAQS} />
+        </Section>
+        <SiteFooter />
       </main>
     </div>
   );
@@ -274,10 +263,20 @@ function Formats() {
         {FORMATS.map((f) => (
           <li
             key={f.label}
-            className="reveal group flex flex-col gap-2 bg-n-0 p-5 transition-colors duration-200 hover:bg-n-1"
+            className="reveal group relative flex flex-col gap-2 bg-n-0 p-5 transition-colors duration-200 hover:bg-n-1"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <h3 className="text-sm font-medium text-n-12">{f.label}</h3>
+              <h3 className="text-sm font-medium text-n-12">
+                {/* The link's ::after covers the card, so the whole card is
+                    the target while the accessible name stays the label. */}
+                {f.href ? (
+                  <Link href={f.href} className="after:absolute after:inset-0">
+                    {f.label}
+                  </Link>
+                ) : (
+                  f.label
+                )}
+              </h3>
               <span className="shrink-0 font-mono text-2xs text-n-7 transition-colors duration-200 group-hover:text-accent">
                 cites {f.cites}
               </span>
@@ -387,60 +386,5 @@ function Free() {
         </div>
       </dl>
     </Section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="border-t border-n-3">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-3 px-5 py-8 sm:px-8">
-        <span className="flex items-center gap-2 text-n-11">
-          <AsterismMark size={13} />
-          <span className="text-xs font-semibold tracking-tight">Asterism</span>
-        </span>
-        <p className="text-xs text-n-7">
-          An asterism is the mark that divides a text — and a shape picked out
-          of scattered stars.
-        </p>
-        <Link
-          href="/library"
-          className="ml-auto text-xs font-medium text-n-9 underline underline-offset-2 transition-colors duration-150 hover:text-n-11"
-        >
-          Open the library
-        </Link>
-      </div>
-    </footer>
-  );
-}
-
-/** One section rhythm for the whole page, so the eye can predict it. */
-function Section({
-  id,
-  eyebrow,
-  title,
-  lede,
-  children,
-}: {
-  id?: string;
-  eyebrow: string;
-  title: string;
-  lede: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section id={id} className="scroll-mt-header border-b border-n-3">
-      <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
-        <div className="reveal max-w-xl">
-          <p className="font-mono text-2xs uppercase tracking-wider text-n-7">
-            {eyebrow}
-          </p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-n-12">
-            {title}
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-n-8">{lede}</p>
-        </div>
-        <div className="mt-10">{children}</div>
-      </div>
-    </section>
   );
 }
