@@ -3,7 +3,7 @@
 import { RotateCcw, TriangleAlert } from "lucide-react";
 import { useEffect, useRef } from "react";
 import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { useRemarkGfm } from "@/hooks/use-remark-gfm";
 import type { Chat, Turn } from "@/hooks/use-chat";
 import type { DocumentRecord } from "@/lib/api";
 import { KIND_NOUN } from "@/lib/locator";
@@ -88,6 +88,8 @@ function TurnView({
   onRetry: () => void;
 }) {
   const pending = !turn.answer && !turn.error;
+  // Loaded only where the browser can parse it; see the hook.
+  const remarkPlugins = useRemarkGfm();
 
   return (
     <div>
@@ -124,7 +126,7 @@ function TurnView({
       {turn.answer && (
         <>
           <div className="prose-answer">
-            <Markdown remarkPlugins={[remarkGfm]} components={MARKDOWN}>
+            <Markdown remarkPlugins={remarkPlugins} components={MARKDOWN}>
               {turn.answer}
             </Markdown>
           </div>
